@@ -539,6 +539,8 @@ func (self *RestClient) BuildUI() {
 		}
 		self.collections = collections
 		
+		colList.Refresh()
+		
 		collectionInput.SetText("")
 	})
 		
