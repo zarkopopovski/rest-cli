@@ -509,7 +509,7 @@ func (self *RestClient) BuildUI() {
 		func() fyne.CanvasObject { return widget.NewLabel("") },
 		func(lii widget.ListItemID, co fyne.CanvasObject) {
 			if len(self.colRequests) > 0 {
-				co.(*widget.Label).SetText(self.colRequests[lii].Url)
+				co.(*widget.Label).SetText(self.colRequests[lii].Method + " " + self.colRequests[lii].Url)
 			}
 		},
 	)
@@ -517,6 +517,12 @@ func (self *RestClient) BuildUI() {
 		selRequestObj := self.colRequests[id]
 		self.selReqIDX = id
 		self.selReqID = int(selRequestObj.Id)
+		
+		self.pInputURL = selRequestObj.Url
+		input.SetText(selRequestObj.Url)
+		
+		self.httpMethod = selRequestObj.Method
+		combo.SetSelected(selRequestObj.Method)
 	}
 	reqList.Resize(fyne.NewSize(100, 400))
 
@@ -559,7 +565,7 @@ func (self *RestClient) BuildUI() {
 	menuItem2 := fyne.NewMenuItem("Save Request", 
 		func() { 
 			err := self.DBService.CreateNewCollectionRequest(int64(self.selColID), map[string]string{
-				"name": input.Text, 
+				"name": self.httpMethod + " " + input.Text, 
 				"url": input.Text, 
 				"method": self.httpMethod, 
 				"params_data": "",
@@ -582,6 +588,7 @@ func (self *RestClient) BuildUI() {
 				self.colRequests = colRequests
 			}	
 			
+			reqList.UnselectAll()
 			reqList.Refresh()
 			
 			input.SetText("") 
@@ -611,6 +618,7 @@ func (self *RestClient) BuildUI() {
 							self.colRequests = nil
 						}	
 						
+						reqList.UnselectAll()
 						reqList.Refresh()
 						
 						self.selColIDX = 0
@@ -637,6 +645,9 @@ func (self *RestClient) BuildUI() {
 						return
 					}
 					self.collections = collections
+					
+					colList.UnselectAll()
+					reqList.UnselectAll()
 					
 					self.colRequests = nil
 					
