@@ -662,7 +662,10 @@ func (self *RestClient) BuildUI() {
   menu := fyne.NewMainMenu(newMenu)
 	self.myWindow.SetMainMenu(menu) 
 	
-	self.myWindow.SetContent(container.NewHSplit(leftContentBorder, grid))
+	hSplitContainer := container.NewHSplit(leftContentBorder, grid)
+	hSplitContainer.SetOffset(0.2)
+	
+	self.myWindow.SetContent(hSplitContainer)
 	self.myWindow.Resize(fyne.NewSize(800, 600))
 	self.myWindow.CenterOnScreen()
 	self.myWindow.ShowAndRun()
