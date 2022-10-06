@@ -11,7 +11,7 @@ import (
 
 	"fyne.io/fyne/v2/layout"
 	
-	//"encoding/json"
+	"encoding/json"
 	//"fmt"
 	//"image/color"
 	"encoding/base64"
@@ -461,7 +461,19 @@ func (self *RestClient) BuildUI() {
 			self.paramTextV = paramText.Text
 			
 			self.ExecuteRequest(urlString, func(stringRes string) {
-				largeText.SetText(stringRes)
+				var obj map[string]interface{}
+				
+				if json.Unmarshal([]byte(stringRes), &obj) == nil {
+					var out bytes.Buffer
+					err := json.Indent(&out, []byte(stringRes), "", "\t")
+					if err != nil {
+						dialog.ShowError(errors.New("JSON formatting error"), self.myWindow)
+						return
+					}
+					largeText.SetText(out.String())
+				} else {
+					largeText.SetText(stringRes)
+				}
 			})			
 		},
 	}
