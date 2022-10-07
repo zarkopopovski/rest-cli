@@ -131,6 +131,16 @@ func (self *RestClient) ResetData() {
 	self.cDataMap = nil
 	self.bDataMap = nil
 	self.authDataMap = nil
+	
+	self.ReinitMaps()
+}
+
+func (self *RestClient) ReinitMaps() {
+	self.pDataMap = make(map[string]string, 1)
+	self.dataMap = make(map[string]string, 1)
+	self.cDataMap = make(map[string]string, 1)
+	self.bDataMap = make(map[string]string, 1)
+	self.authDataMap = make(map[string]string, 1)
 }
 
 func (self *RestClient) BuildUI() {
@@ -846,16 +856,16 @@ func (self *RestClient) ExecuteRequest(urlString string, callBack func(stringRes
 
 	defer self.res.Body.Close()
 	
+	body, readErr := ioutil.ReadAll(self.res.Body)
+	if readErr != nil {
+		dialog.ShowError(readErr, self.myWindow)
+		return
+	}
+		
+	log.Println(string(body))
+	callBack(string(body))
+	
 	if self.res.StatusCode == http.StatusOK {
-		body, readErr := ioutil.ReadAll(self.res.Body)
-		if readErr != nil {
-			dialog.ShowError(readErr, self.myWindow)
-			return
-		}
-			
-		log.Println(string(body))
-		callBack(string(body))
-	} else {
 		dialog.ShowError(errors.New("Non-OK HTTP status: " + strconv.Itoa(self.res.StatusCode)), self.myWindow)
 	}
 }
