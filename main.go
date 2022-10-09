@@ -141,6 +141,55 @@ func (self *RestClient) ReinitMaps() {
 	self.authDataMap = make(map[string]string, 1)
 }
 
+func (self *RestClient) SetRequestData(requestData *models.UrlRequest, callBack func()) {
+	self.ResetData()
+	
+	self.pInputURL = ""
+	self.httpMethod = ""
+	self.radioOpt1 = ""
+	self.radioOpt2 = ""
+	self.paramTextV = ""
+	self.authMethod = ""
+	self.authKeyLoc = ""
+	self.selectedFile = ""
+	
+	bodyDataConfig, _ := self.StringedMapToMap(requestData.BodyData)
+	
+	self.pInputURL = requestData.Url
+	self.httpMethod = requestData.Method
+	self.radioOpt1 = bodyDataConfig["type"]
+	self.radioOpt2 = bodyDataConfig["sub_type"]
+	self.paramTextV = bodyDataConfig["text_data"]
+	
+	self.pDataMap, _ = self.StringedMapToMap(requestData.ParamsData)
+	self.dataMap, _ = self.StringedMapToMap(requestData.HeaderData)	
+	self.cDataMap, _ = self.StringedMapToMap(requestData.CookieData)
+	self.bDataMap, _ = self.StringedMapToMap(bodyDataConfig["bData"])
+
+	if bodyDataConfig["auth_type"] != "" && bodyDataConfig["auth_type"] != "No Auth" {
+		self.authMethod = bodyDataConfig["auth_type"]
+		self.authKeyLoc = bodyDataConfig["auth_key_loc"]
+		
+		self.authDataMap["authKeyLoc"] = self.authKeyLoc
+		self.authDataMap["authKey"] = bodyDataConfig["auth_key"]
+		self.authDataMap["authValue"] = bodyDataConfig["auth_value"]
+	}
+	
+	callBack()
+}
+
+func (self *RestClient) StringedMapToMap(stringDataMap string) (map[string]string, error) {
+	var dataMap map[string]string
+
+	err := json.Unmarshal([]byte(stringDataMap), &dataMap)
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	return dataMap, nil
+}
+
 func (self *RestClient) BuildUI() {
 	myApp := app.New()
 	self.myWindow = myApp.NewWindow("Rest Client")
@@ -463,7 +512,6 @@ func (self *RestClient) BuildUI() {
 		Items: []*widget.FormItem{
 		{Text: "URL:", Widget: input}, 
 		{Text: "METHOD:", Widget: combo},
-		//{Text: "OPTION:", Widget: wrapCheck}
 		}, OnSubmit: func() { 
 			if (input.Text == "") {
 				dialog.ShowError(errors.New("Empty URL"), self.myWindow)
@@ -529,7 +577,8 @@ func (self *RestClient) BuildUI() {
 			self.colRequests = colRequests
 		} else {
 			self.colRequests = nil
-		}	
+		}
+		reqList.UnselectAll()	
 		reqList.Refresh()
 	}
 	colList.Resize(fyne.NewSize(100, 50))
@@ -548,11 +597,12 @@ func (self *RestClient) BuildUI() {
 		self.selReqIDX = id
 		self.selReqID = int(selRequestObj.Id)
 		
-		self.pInputURL = selRequestObj.Url
-		input.SetText(selRequestObj.Url)
-		
-		self.httpMethod = selRequestObj.Method
-		combo.SetSelected(selRequestObj.Method)
+		self.SetRequestData(selRequestObj, func() {
+			input.SetText(self.pInputURL)
+			combo.SetSelected(self.httpMethod)
+			
+			paramText.SetText(self.paramTextV)
+		})
 	}
 	reqList.Resize(fyne.NewSize(100, 400))
 
@@ -605,6 +655,18 @@ func (self *RestClient) BuildUI() {
 				bDataConfig["sub_type"] = self.radioOpt2
 			} else {
 				bDataConfig["sub_type"] = ""
+			}
+				
+			if self.authMethod != "" && self.authMethod != "No Auth" {
+				bDataConfig["auth_type"] = self.authMethod
+				bDataConfig["auth_key"] = self.authDataMap["authKey"]
+				bDataConfig["auth_value"] = self.authDataMap["authValue"]
+				bDataConfig["auth_key_loc"] = self.authDataMap["authKeyLoc"]
+			} else {
+				bDataConfig["auth_type"] = self.authMethod
+				bDataConfig["auth_key"] = ""
+				bDataConfig["auth_value"] = ""
+				bDataConfig["auth_key_loc"] = ""
 			}
 				
 			pDataMapLocal, _ := json.Marshal(self.pDataMap)
