@@ -102,11 +102,9 @@ func (self *RestClient) BuildAuthForm(inputKey bool, inputValue bool, optSelecto
 			}
 			if inputKey == true {
 				self.authDataMap["authKey"] = akInputKey.Text
-				akInputKey.SetText("")
 			}
 			if inputValue == true {
 				self.authDataMap["authValue"] = akInputValue.Text
-				akInputValue.SetText("")
 			}
 			
 			dialog.ShowInformation("Auth Info", "Params are set", self.myWindow)
@@ -367,7 +365,7 @@ func (self *RestClient) BuildUI() {
 			paramText.Hide()
 			fileVBox.Show()
 			self.selectedFile = ""
-		} else if self.radioOpt1 == "form-data" {
+		} else if self.radioOpt1 == "form-data" || self.radioOpt1 == "x-www-form-urlencoded" {
 			comboOpt2.Disable()
 			bListAreaContent.Show()
 			paramText.Hide()
@@ -379,11 +377,11 @@ func (self *RestClient) BuildUI() {
 			self.selectedFile = ""
 		} else {
 			comboOpt2.Disable()
-			bListAreaContent.Show()
+			bListAreaContent.Hide()
 			paramText.Hide()
-			bForm.Enable()
-			booInputKey.Enable()
-			booInputValue.Enable()
+			bForm.Disable()
+			booInputKey.Disable()
+			booInputValue.Disable()
 			fileVBox.Hide()
 			self.selectedFile = ""
 		}		
@@ -586,14 +584,31 @@ func (self *RestClient) BuildUI() {
 	)
 	menuItem2 := fyne.NewMenuItem("Save Request", 
 		func() { 
+			bDataConfig := make(map[string]string, 1)
+			bDataConfig["type"] = self.radioOpt1
+			
+			bDataMapLocal, _ := json.Marshal(self.bDataMap)
+			bDataConfig["bData"] = string(bDataMapLocal)
+			
+			if self.radioOpt1 == "raw" {
+				bDataConfig["text_data"] = paramText.Text
+				bDataConfig["sub_type"] = self.radioOpt2
+			} else {
+				bDataConfig["sub_type"] = ""
+			}
+				
+			pDataMapLocal, _ := json.Marshal(self.pDataMap)
+			dataMapLocal, _ := json.Marshal(self.dataMap)
+			cDataMapLocal, _ := json.Marshal(self.cDataMap)
+			bDataMapConfigLocal, _ := json.Marshal(bDataConfig)
 			err := self.DBService.CreateNewCollectionRequest(int64(self.selColID), map[string]string{
 				"name": self.httpMethod + " " + input.Text, 
 				"url": input.Text, 
 				"method": self.httpMethod, 
-				"params_data": "",
-				"header_data": "",
-				"cookie_data": "",
-				"body_data": "",
+				"params_data": string(pDataMapLocal),
+				"header_data": string(dataMapLocal),
+				"cookie_data": string(cDataMapLocal),
+				"body_data": string(bDataMapConfigLocal),
 			})
 			if err != nil {
 				dialog.ShowError(errors.New("Error saving request"), self.myWindow)
