@@ -365,7 +365,7 @@ func (self *RestClient) BuildUI() {
 			paramText.Hide()
 			fileVBox.Show()
 			self.selectedFile = ""
-		} else if self.radioOpt1 == "form-data" || self.radioOpt1 == "x-www-form-urlencoded" {
+		} else if self.radioOpt1 == "form-data" {
 			comboOpt2.Disable()
 			bListAreaContent.Show()
 			paramText.Hide()
@@ -374,6 +374,16 @@ func (self *RestClient) BuildUI() {
 			booInputKey.Enable()
 			booInputValue.Enable()
 			fileVBox.Show()
+			self.selectedFile = ""
+		} else if self.radioOpt1 == "x-www-form-urlencoded" {
+			comboOpt2.Disable()
+			bListAreaContent.Show()
+			paramText.Hide()
+			bForm.Show()
+			bForm.Enable()
+			booInputKey.Enable()
+			booInputValue.Enable()
+			fileVBox.Hide()
 			self.selectedFile = ""
 		} else {
 			comboOpt2.Disable()
