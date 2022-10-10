@@ -3,6 +3,7 @@ package main
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/dialog"
@@ -31,6 +32,7 @@ import (
 	
 	"github.com/zarkopopovski/rest-cli/services"
 	"github.com/zarkopopovski/rest-cli/models"
+	"github.com/zarkopopovski/rest-cli/views"
 )
 
 type RestClient struct {
@@ -58,61 +60,9 @@ type RestClient struct {
 	res 					*http.Response
 	myWindow			fyne.Window
 	DBService	 	*services.DBService
-}
-
-func (self *RestClient) BuildAuthForm(inputKey bool, inputValue bool, optSelector bool, optSelectorData []string, selectedIndex int, isKeyUsername bool, isValuePassword bool) (*widget.Form) {
-	formItems := []*widget.FormItem{}
-	var akInputKey *widget.Entry
-	var akInputValue *widget.Entry
-	var akSelect *widget.Select
-	
-	if inputKey == true {
-		akInputKey = widget.NewEntry()
-		if isKeyUsername == true {
-			akInputKey.SetPlaceHolder("Enter username...")
-		} else {
-			akInputKey.SetPlaceHolder("Enter key...")
-		}
-		formItems = append(formItems, &widget.FormItem{Text:"Key", Widget:akInputKey})
-	}
-	if inputValue == true {
-		if isValuePassword == true {
-			akInputValue = widget.NewPasswordEntry()
-			akInputValue.SetPlaceHolder("Enter password...")
-		} else {
-			akInputValue = widget.NewEntry()
-			akInputValue.SetPlaceHolder("Enter value...")
-		}
-		formItems = append(formItems, &widget.FormItem{Text:"Value", Widget:akInputValue})
-	}
-	if optSelector == true {
-		self.authKeyLoc = optSelectorData[selectedIndex]
-		akSelect = widget.NewSelect(optSelectorData, func(value string) {
-			self.authKeyLoc = value
-		})
-		akSelect.SetSelected(self.authKeyLoc)
-		formItems = append(formItems, &widget.FormItem{Text:"Add top", Widget:akSelect})
-	}
-	
-	akForm := &widget.Form{
-		Items: formItems, OnSubmit: func() {
-			self.authDataMap = make(map[string]string)
-			if optSelector == true {
-				self.authDataMap["authKeyLoc"] = self.authKeyLoc
-			}
-			if inputKey == true {
-				self.authDataMap["authKey"] = akInputKey.Text
-			}
-			if inputValue == true {
-				self.authDataMap["authValue"] = akInputValue.Text
-			}
-			
-			dialog.ShowInformation("Auth Info", "Params are set", self.myWindow)
-		}, SubmitText: "Add Key",
-	}
-	akForm.Hide()
-	
-	return akForm
+	akView				*views.AuthView
+	brView				*views.AuthView
+	bsView				*views.AuthView
 }
 
 func (self *RestClient) ResetData() {
@@ -192,7 +142,9 @@ func (self *RestClient) StringedMapToMap(stringDataMap string) (map[string]strin
 
 func (self *RestClient) BuildUI() {
 	myApp := app.New()
+	myApp.Settings().SetTheme(theme.LightTheme())
 	self.myWindow = myApp.NewWindow("Rest Client")
+
 	//self.myWindow.SetFixedSize(true)
 	
 	input := widget.NewEntry()
@@ -474,18 +426,22 @@ func (self *RestClient) BuildUI() {
 			akForm.Hide()
 			brtForm.Hide()
 			basForm.Hide()
+			self.authDataMap = make(map[string]string)
 		} else if value == authSelectOpt[1] {
 			akForm.Show()
 			brtForm.Hide()
 			basForm.Hide()
+			self.authDataMap = self.akView.AuthDataMap
 		} else if value == authSelectOpt[2] {
 			akForm.Hide()
 			brtForm.Show()
 			basForm.Hide()
+			self.authDataMap = self.brView.AuthDataMap
 		} else if value == authSelectOpt[3] {
 			akForm.Hide()
 			brtForm.Hide()
 			basForm.Show()
+			self.authDataMap = self.bsView.AuthDataMap
 		}
 	})
 	authSelect.SetSelected(self.authMethod)	
@@ -494,9 +450,17 @@ func (self *RestClient) BuildUI() {
 	
 	bodyBorder := container.New(layout.NewBorderLayout(nil, nil, bodyTypeLabel, nil), bodyTypeLabel, comboOpt1)	
 	
-	akForm = self.BuildAuthForm(true, true, true, []string{"Header", "Query Params"}, 0, false, false)
-	brtForm = self.BuildAuthForm(false, true, false, []string{}, 0, false, false)
-	basForm = self.BuildAuthForm(true, true, false, []string{}, 0, true, true)
+	self.akView = &views.AuthView{}
+	self.akView.InitForm(true, true, true, []string{"Header", "Query Params"}, 0, false, false)
+	akForm = self.akView.BuildAuthForm(self.myWindow)
+	
+	self.brView = &views.AuthView{}
+	self.brView.InitForm(false, true, false, []string{}, 0, false, false)
+	brtForm = self.brView.BuildAuthForm(self.myWindow)
+	
+	self.bsView = &views.AuthView{}
+	self.bsView.InitForm(true, true, false, []string{}, 0, true, true)
+	basForm = self.bsView.BuildAuthForm(self.myWindow)
 
 	formSeparator := widget.NewSeparator()
 		
@@ -792,6 +756,16 @@ func (self *RestClient) ReloadCollections() {
 func (self *RestClient) ExecuteRequest(urlString string, callBack func(stringRes string)) {
 	jar, err := cookiejar.New(nil)		
 	cookiesArray := make([]*http.Cookie, 1)
+	
+	if self.authMethod == "No Auth" {
+			self.authDataMap = make(map[string]string)
+	} else if self.authMethod == "API Key" {
+			self.authDataMap = self.akView.AuthDataMap
+	} else if self.authMethod == "Bearer Token" {
+			self.authDataMap = self.brView.AuthDataMap
+	} else if self.authMethod == "Basic Auth" {
+			self.authDataMap = self.bsView.AuthDataMap
+	}
 	
 	if val, found := self.authDataMap["authKeyLoc"]; found && val != "Header" {
 		if strings.Index(urlString, "?") > -1 {
