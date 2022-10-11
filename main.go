@@ -53,6 +53,7 @@ type RestClient struct {
 	selColID 	   int
 	selReqIDX	   int
 	selReqID 	   int
+	defaultTheme	bool
 	collections   []*models.Collection
 	colRequests 	[]*models.UrlRequest
 	client 		 	*http.Client	
@@ -142,7 +143,14 @@ func (self *RestClient) StringedMapToMap(stringDataMap string) (map[string]strin
 
 func (self *RestClient) BuildUI() {
 	myApp := app.New()
-	myApp.Settings().SetTheme(theme.LightTheme())
+	//myApp.Settings().SetTheme(theme.LightTheme())
+	
+	if self.defaultTheme {
+		myApp.Settings().SetTheme(theme.LightTheme())
+	} else {
+		myApp.Settings().SetTheme(theme.DarkTheme())
+	}
+	
 	self.myWindow = myApp.NewWindow("Rest Client")
 
 	//self.myWindow.SetFixedSize(true)
@@ -731,8 +739,24 @@ func (self *RestClient) BuildUI() {
 			}, self.myWindow)			
 		},
 	)
+	menuItem5 := fyne.NewMenuItem("Change Theme", 
+		func() {
+			self.defaultTheme = !self.defaultTheme
+			if self.defaultTheme {
+				myApp.Settings().SetTheme(theme.LightTheme())
+			} else {
+				myApp.Settings().SetTheme(theme.DarkTheme())
+			}
+		},
+	)
+	menuItem6 := fyne.NewMenuItem("About", 
+		func() {
+			dialog.ShowInformation("About Rest-Cli", "Rest Cli is a simple Postman alternative, developed with the features in mind. \nDeveloped by Zharko Popovski 09/2022.", self.myWindow)
+		},
+	)
   newMenu := fyne.NewMenu("File", menuItem1, menuItem2, menuItem3, menuItem4)
-  menu := fyne.NewMainMenu(newMenu)
+  helpMenu := fyne.NewMenu("Help", menuItem5, menuItem6)
+  menu := fyne.NewMainMenu(newMenu, helpMenu)
 	self.myWindow.SetMainMenu(menu) 
 	
 	hSplitContainer := container.NewHSplit(leftContentBorder, grid)
@@ -941,6 +965,7 @@ func main() {
 		authMethod:   "",
 		authKeyLoc:   "",
 		selectedFile: "",
+		defaultTheme: true,
 		selColIDX: 0,
 		selReqIDX: 0,
 		DBService:  &services.DBService{},
