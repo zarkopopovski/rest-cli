@@ -16,6 +16,7 @@ type AuthView struct {
   SelectedIndex    int
   AuthDataMap  		map[string]string
   AuthKeyLoc			 string
+  AkSelect				 *widget.Select
 }
 
 func (self *AuthView) InitForm(inputKey bool, inputValue bool, optSelector bool, optSelectorData []string, selectedIndex int, isKeyUsername bool, isValuePassword bool) {
@@ -32,7 +33,7 @@ func (self *AuthView) BuildAuthForm(myWindow fyne.Window) (*widget.Form) {
 	formItems := []*widget.FormItem{}
 	var akInputKey *widget.Entry
 	var akInputValue *widget.Entry
-	var akSelect *widget.Select
+	//var akSelect *widget.Select
 	
 	if self.InputKey == true {
 		akInputKey = widget.NewEntry()
@@ -55,11 +56,11 @@ func (self *AuthView) BuildAuthForm(myWindow fyne.Window) (*widget.Form) {
 	}
 	if self.OptSelector == true {
 		self.AuthKeyLoc = self.OptSelectorData[self.SelectedIndex]
-		akSelect = widget.NewSelect(self.OptSelectorData, func(value string) {
+		self.AkSelect = widget.NewSelect(self.OptSelectorData, func(value string) {
 			self.AuthKeyLoc = value
 		})
-		akSelect.SetSelected(self.AuthKeyLoc)
-		formItems = append(formItems, &widget.FormItem{Text:"Add top", Widget:akSelect})
+		self.AkSelect.SetSelected(self.AuthKeyLoc)
+		formItems = append(formItems, &widget.FormItem{Text:"Add top", Widget:self.AkSelect})
 	}
 	
 	akForm := &widget.Form{

@@ -574,6 +574,40 @@ func (self *RestClient) BuildUI() {
 			combo.SetSelected(self.httpMethod)
 			
 			paramText.SetText(self.paramTextV)
+			
+			if self.authMethod != "" {
+				authSelectOpt := []string{"No Auth", "API Key", "Bearer Token", "Basic Auth"}
+				
+				if self.authMethod == authSelectOpt[1] {
+					akForm.Show()
+					brtForm.Hide()
+					basForm.Hide()
+					self.authDataMap = self.akView.AuthDataMap
+				} else if self.authMethod == authSelectOpt[2] {
+					akForm.Hide()
+					brtForm.Show()
+					basForm.Hide()
+					self.authDataMap = self.brView.AuthDataMap
+				} else if self.authMethod == authSelectOpt[3] {
+					akForm.Hide()
+					brtForm.Hide()
+					basForm.Show()
+					self.authDataMap = self.bsView.AuthDataMap
+				}
+				authSelect.SetSelected(self.authMethod)	
+			} else {
+				akForm.Hide()
+				brtForm.Hide()
+				basForm.Hide()
+				self.authDataMap = make(map[string]string)
+				
+				authSelect.SetSelected(authSelectOpt[0])
+			}
+			
+			if self.authKeyLoc != "" {
+				self.akView.AkSelect.SetSelected(self.authKeyLoc)
+				self.akView.AuthKeyLoc = self.authKeyLoc
+			}
 		})
 	}
 	reqList.Resize(fyne.NewSize(100, 400))
@@ -610,6 +644,9 @@ func (self *RestClient) BuildUI() {
 		func() { 
 			input.SetText("") 
 			largeText.SetText("")
+			
+			reqList.UnselectAll()
+			reqList.Refresh()
 			
 			self.ResetData()
 		},
